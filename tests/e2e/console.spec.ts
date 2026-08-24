@@ -18,9 +18,14 @@ test('streams tokens and can be stopped', async ({ page }) => {
   await page.getByTestId('console-send').click()
   await expect(page.getByTestId('console-stop')).toBeVisible()
 
+  // Wait for at least one token to actually stream in before stopping, so this
+  // isn't racing the mock provider's first tick (flaky otherwise).
+  await expect(page.getByTestId('console-message-assistant')).not.toHaveText('assistant:', {
+    timeout: 2000
+  })
+
   await page.getByTestId('console-stop').click()
   await expect(page.getByTestId('console-send')).toBeVisible()
-  await expect(page.getByTestId('console-message-assistant')).not.toHaveText('assistant:')
 })
 
 test('offline error is recoverable', async ({ page }) => {

@@ -1,5 +1,21 @@
 # NOTES
 
+## 2026-08-24 — flaky test found and fixed: "streams tokens and can be stopped"
+
+A post-Phase-6 full re-run caught an intermittent failure in
+`tests/e2e/console.spec.ts`: the test clicked Stop immediately after Send,
+racing the mock provider's first token (fires after a 40ms interval). If
+Stop won the race, the assistant bubble was still empty and the "some
+content streamed" assertion failed. Fixed by waiting for the assistant
+message to actually contain streamed content *before* clicking Stop
+(`expect(...).not.toHaveText('assistant:')` moved ahead of the stop click),
+so the test proves "streaming produces visible output" and "stop halts it"
+as two ordered facts instead of a race. Re-ran it 5x standalone plus the
+full `npm run verify` afterward — stable. Lesson: always re-run the full
+suite fresh at the end of a large session rather than trusting only the
+per-phase run, since inter-test timing assumptions can hide a race that a
+single run won't surface.
+
 ## 2026-08-24 — shared pure logic goes in src/shared, not either project
 
 `buildGraph` (Phase 5) needs to be imported by both a `tests/unit` spec
