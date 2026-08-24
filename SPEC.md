@@ -157,26 +157,52 @@ persistence, view persistence).
 
 ## Phase 3 — Speech-to-text
 
+> **Note on location:** `SttProvider` and its implementations live under
+> `src/main/stt/`, not `src/renderer/lib/stt/`. Spawning `whisper.cpp` needs
+> Node's `child_process`, which only the Electron main process has —
+> `contextIsolation`/`nodeIntegration` stay locked down in the renderer (see
+> `src/main/index.ts`). The renderer talks to it over IPC
+> (`window.sage.transcribe`, exposed by `src/preload/index.ts`), the same
+> pattern already used for `SAGE_PROVIDERS` in Phase 2.
+
 28. **`SttProvider` interface exists with `WhisperCpp` and `Mock` implementations.**
-    `grep -q "interface SttProvider" src/renderer/lib/stt/types.ts && test -f src/renderer/lib/stt/WhisperCppProvider.ts && test -f src/renderer/lib/stt/MockSttProvider.ts`
+    `grep -q "interface SttProvider" src/main/stt/types.ts && test -f src/main/stt/WhisperCppProvider.ts && test -f src/main/stt/MockSttProvider.ts`
+    Result: ✅ all three present; `createSttProvider.ts` selects between them via `SAGE_PROVIDERS`.
 
 29. **`WhisperCppProvider` spawns `whisper.cpp` against a `ggml` model under `models/`.**
-    `grep -q "models" src/renderer/lib/stt/WhisperCppProvider.ts && grep -q "ggml" src/renderer/lib/stt/WhisperCppProvider.ts`
+    `grep -q "models" src/main/stt/WhisperCppProvider.ts && grep -q "ggml" src/main/stt/WhisperCppProvider.ts`
+    Result: ✅ both matched; default model path is `models/ggml-base.en.bin`, spawns the
+    `whisper-cli` binary (overridable via `SAGE_WHISPER_BIN`) with `-m/-f/-otxt`.
 
 30. **Push-to-talk capture shows a live waveform.**
     `test -f src/renderer/components/Waveform.tsx`
+    Result: ✅ present, driven by `sttStore`'s `levels` array (real mic RMS via
+    `MicAudioCapture`, or a deterministic sine pattern via `MockAudioCapture` under
+    `SAGE_PROVIDERS=mock`).
 
 31. **A completed transcript is inserted as the user turn and auto-sent to the LLM.**
     `npx playwright test tests/e2e/stt.spec.ts -g "transcript becomes a user turn and is auto-sent"`
+    Result: ✅ 1 passed — press-and-release on `push-to-talk` shows the waveform, then the
+    mock transcript appears as a user message and streaming begins automatically.
 
 32. **Per-utterance transcription latency is recorded.**
     `grep -rq "transcriptionLatencyMs" src/renderer`
+    Result: ✅ `sttStore.transcriptionLatencyMs`, set from each `transcribe()` call's
+    `latencyMs`.
 
 33. **A 3-second WAV fixture is checked in.**
     `test -f tests/fixtures/sample-3s.wav`
+    Result: ✅ present (16kHz mono, synthesized 440Hz tone, ~96KB).
 
 34. **The real whisper.cpp test skips with a clear message when the model file is absent (this is the only permitted skip).**
     `npx vitest run tests/unit/whisperCpp.test.ts 2>&1 | grep -qi "skip"`
+    Result: ✅ "1 skipped"; companion test additionally logs
+    `SKIP: whisper.cpp ggml model not found at .../models/ggml-base.en.bin — download a
+    model into models/ and rerun...`.
+
+**Phase 3 `npm run verify`: exit 0** (lint clean, lint:tokens clean over 23
+renderer files, typecheck clean, 5 passed / 1 skipped unit tests — the
+permitted whisper-model guard — build clean, 8/8 e2e).
 
 ---
 
@@ -251,7 +277,7 @@ persistence, view persistence).
 | 0 | 1–11 | done (push pending) | exit 0 — see Phase 0 results above |
 | 1 | 12–20 | done (push pending) | exit 0 — see Phase 1 results above |
 | 2 | 21–27 | done (push pending) | exit 0 — see Phase 2 results above |
-| 3 | 28–34 | not started | — |
+| 3 | 28–34 | done (push pending) | exit 0 — see Phase 3 results above |
 | 4 | 35–41 | not started | — |
 | 5 | 42–45 | not started | — |
 | 6 | 46–50 | not started | — |

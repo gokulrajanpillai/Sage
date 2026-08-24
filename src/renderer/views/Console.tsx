@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { PushToTalk } from '../components/PushToTalk'
 import { useConsoleStore } from '../store/consoleStore'
 import { borders, colors } from '../theme/tokens'
 
@@ -76,6 +77,10 @@ export function Console() {
             <span>{message.content}</span>
           </div>
         ))}
+      </div>
+
+      <div className="mt-4">
+        <PushToTalk />
       </div>
 
       <div className="mt-4 flex gap-2">

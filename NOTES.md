@@ -1,5 +1,17 @@
 # NOTES
 
+## 2026-08-24 — SttProvider lives in the main process, not the renderer
+
+SPEC.md's Phase 3 criteria originally assumed `src/renderer/lib/stt/...`
+(mirroring Phase 2's `LlmProvider`, which works fine in the renderer since it
+only needs `fetch`). Speech-to-text's `WhisperCppProvider` needs to spawn a
+child process, which requires Node's `child_process` — not available in the
+renderer given `contextIsolation: true` / `nodeIntegration: false` (kept as-is
+deliberately; weakening those to make the path match would be the wrong
+trade). Implementations were placed under `src/main/stt/` instead, exposed to
+the renderer via `window.sage.transcribe` (contextBridge + `ipcMain.handle`).
+SPEC.md's criteria 28-29 have been corrected to reference the real paths.
+
 Running log of blockers encountered during the build, the workaround taken, and follow-up needed. Newest first.
 
 ## 2026-08-24 — push authentication

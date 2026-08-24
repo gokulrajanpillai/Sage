@@ -1,9 +1,29 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { randomUUID } from 'node:crypto'
+import { unlinkSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { createSttProvider } from './stt/createSttProvider'
 
 if (process.env.SAGE_USER_DATA_DIR) {
   app.setPath('userData', process.env.SAGE_USER_DATA_DIR)
 }
+
+const sttProvider = createSttProvider()
+
+ipcMain.handle('stt:transcribe', async (_event, wavBytes: Uint8Array) => {
+  const tempPath = join(tmpdir(), `sage-${randomUUID()}.wav`)
+  writeFileSync(tempPath, Buffer.from(wavBytes))
+  try {
+    return await sttProvider.transcribe(tempPath)
+  } finally {
+    try {
+      unlinkSync(tempPath)
+    } catch {
+      // best-effort cleanup
+    }
+  }
+})
 
 function createWindow(): void {
   const win = new BrowserWindow({
