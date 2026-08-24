@@ -115,24 +115,43 @@ smoke, left-rail switching, restart persistence).
 
 21. **`LlmProvider` interface exists with `Ollama` and `Mock` implementations.**
     `grep -q "interface LlmProvider" src/renderer/lib/llm/types.ts && test -f src/renderer/lib/llm/OllamaProvider.ts && test -f src/renderer/lib/llm/MockLlmProvider.ts`
+    Result: ✅ all three present; `createLlmProvider.ts` selects between them.
 
 22. **Provider selection is controlled by `SAGE_PROVIDERS`.**
-    `grep -rq "SAGE_PROVIDERS" src/renderer/lib/llm`
+    `grep -rq "SAGE_PROVIDERS" src/preload src/renderer/lib/llm`
+    Result: ✅ the main/preload process reads `process.env.SAGE_PROVIDERS` (renderer processes have no
+    direct `process.env`) and exposes it via `contextBridge` as `window.sage.providers`;
+    `createLlmProvider.ts` reads that bridge value to pick `Mock` vs `Ollama`.
 
 23. **`OllamaProvider` lists models via `GET /api/tags` and streams via `POST /api/chat` against `localhost:11434`.**
     `grep -q "/api/tags" src/renderer/lib/llm/OllamaProvider.ts && grep -q "/api/chat" src/renderer/lib/llm/OllamaProvider.ts && grep -q "11434" src/renderer/lib/llm/OllamaProvider.ts`
+    Result: ✅ all three matched.
 
 24. **Console streams assistant tokens incrementally and exposes a stop control.**
     `npx playwright test tests/e2e/console.spec.ts -g "streams tokens and can be stopped"`
+    Result: ✅ 1 passed.
 
 25. **The model picker persists the selected model across restart.**
     `npx playwright test tests/e2e/console.spec.ts -g "model selection persists"`
+    Result: ✅ 1 passed.
 
 26. **An offline/unreachable provider surfaces a recoverable error state (not a crash).**
     `npx playwright test tests/e2e/console.spec.ts -g "offline error is recoverable"`
+    Result: ✅ 1 passed. (`MockLlmProvider`'s `sage-mock-offline` model deterministically
+    triggers `onError` so this is provable under the mandatory `SAGE_PROVIDERS=mock` e2e rule
+    without touching a real network.)
 
 27. **Conversation history is persisted to disk and reloaded on restart.**
     `npx playwright test tests/e2e/console.spec.ts -g "history persists"`
+    Result: ✅ 1 passed. (Persisted via `zustand/persist` to the renderer's `localStorage`,
+    which Chromium backs with a file under the Electron `userData` directory — the same
+    on-disk mechanism proven in criterion 17 — verified by relaunching against the same
+    `SAGE_USER_DATA_DIR`.)
+
+**Phase 2 `npm run verify`: exit 0** (lint clean, lint:tokens clean over 16
+renderer files, typecheck clean, 4/4 unit tests, build clean, 7/7 e2e —
+smoke, left-rail, stream+stop, offline-recovery, model persistence, history
+persistence, view persistence).
 
 ---
 
@@ -231,7 +250,7 @@ smoke, left-rail switching, restart persistence).
 |-------|----------|--------|-------------------------------|
 | 0 | 1–11 | done (push pending) | exit 0 — see Phase 0 results above |
 | 1 | 12–20 | done (push pending) | exit 0 — see Phase 1 results above |
-| 2 | 21–27 | not started | — |
+| 2 | 21–27 | done (push pending) | exit 0 — see Phase 2 results above |
 | 3 | 28–34 | not started | — |
 | 4 | 35–41 | not started | — |
 | 5 | 42–45 | not started | — |
