@@ -1,0 +1,15 @@
+node_modules/
+out/
+dist/
+dist-electron/
+release/
+coverage/
+playwright-report/
+test-results/
+.vite/
+*.log
+.DS_Store
+Thumbs.db
+models/*.bin
+models/*.gguf
+!models/.gitkeep
