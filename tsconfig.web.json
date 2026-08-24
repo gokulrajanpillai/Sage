@@ -17,5 +17,5 @@
     "outDir": "dist/.tsbuild-web",
     "noEmit": true
   },
-  "include": ["src/renderer"]
+  "include": ["src/renderer", "src/shared"]
 }

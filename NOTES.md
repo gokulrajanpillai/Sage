@@ -1,5 +1,17 @@
 # NOTES
 
+## 2026-08-24 — shared pure logic goes in src/shared, not either project
+
+`buildGraph` (Phase 5) needs to be imported by both a `tests/unit` spec
+(compiled under the Node-side `tsconfig.node.json`) and `Cosmos.tsx`
+(compiled under `tsconfig.web.json`). A raw cross-project relative import
+between the two `tsc -b` projects fails with TS6307 ("File X is not listed
+within the file list of project Y"). Fix: put dependency-free pure logic in
+`src/shared/`, included by both tsconfigs, instead of arbitrarily picking one
+side. Same category of fix as the STT/vault process-boundary notes above,
+but for logic that has no environment dependency at all rather than one
+that's main-only.
+
 ## 2026-08-24 — vault filesystem logic also lives in the main process
 
 Same reasoning as the STT note below: `src/main/vault/` (not

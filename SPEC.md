@@ -261,17 +261,43 @@ clean, 10/10 e2e).
 
 ## Phase 5 — Cosmos (graph)
 
+> **Note on location:** `buildGraph` lives in `src/shared/graph/graphIndex.ts`,
+> not `src/renderer/lib`. It's a pure function (no `fs`, no DOM) needed by
+> both a `tests/unit` spec (compiled under `tsconfig.node.json`) and
+> `Cosmos.tsx` (compiled under `tsconfig.web.json`) — TypeScript's project
+> references (`tsc -b`) reject a raw cross-project relative import, so it
+> sits in a neutral `src/shared` folder included by both `tsconfig.node.json`
+> and `tsconfig.web.json`.
+
 42. **A graph index treats notes as nodes and wikilinks + shared tags as edges.**
     `npx vitest run tests/unit/graphIndex.test.ts`
+    Result: ✅ 2 passed — one node per note; a wikilink and a shared tag between the same
+    two notes each produce their own edge, deduplicated per (pair, kind).
 
 43. **Cosmos renders the graph on canvas via `d3-force`, with pan, zoom, hover labels, and click-to-open-in-Vault.**
     `grep -q "d3-force" src/renderer/views/Cosmos.tsx && npx playwright test tests/e2e/cosmos.spec.ts -g "click opens the note in Vault"`
+    Result: ✅ matched; 1 passed. Additionally verified in the same file (all passing):
+    `"shows a hover label for a node"`, `"zooms on wheel"`, `"pans on drag"`. Node positions
+    come from a `d3-force` simulation (`forceLink`/`forceManyBody`/`forceCenter`/`forceCollide`)
+    settled synchronously (`.stop()` + 60 manual `tick()`s) and painted once to a `<canvas>`;
+    invisible position-matched buttons over the canvas carry hover/click semantics so both a
+    real user (canvas visuals) and Playwright (accessible hit targets) get a working UI.
 
 44. **Cosmos uses original star-field styling (no third-party or trademarked assets).**
     `test -f src/renderer/components/StarField.tsx && ! find src/renderer -iname "*.png" -o -iname "*.jpg" | grep .`
+    Result: ✅ `StarField.tsx` is a hand-authored SVG of randomly-placed dots; no binary
+    image assets anywhere under `src/renderer`.
 
 45. **A synthetic 500-node vault renders its first Cosmos frame in under 2000ms.**
     `npx playwright test tests/e2e/cosmosPerf.spec.ts -g "500-node first frame under 2000ms"`
+    Result: ✅ 1 passed — 500 synthetic notes (20 tag groups, chained wikilinks) generated
+    into a temp vault; timer starts at the Cosmos click and stops when the node-count readout
+    shows all 500, asserted `< 2000ms` (full test wall time incl. Electron launch/close
+    overhead was ~1.4s, so the measured click-to-rendered interval is well inside budget).
+
+**Phase 5 `npm run verify`: exit 0** (lint clean, lint:tokens clean over 25
+renderer files, typecheck clean, 12 passed / 1 skipped unit tests, build
+clean, 15/15 e2e).
 
 ---
 
@@ -307,7 +333,7 @@ clean, 10/10 e2e).
 | 2 | 21–27 | done (push pending) | exit 0 — see Phase 2 results above |
 | 3 | 28–34 | done (push pending) | exit 0 — see Phase 3 results above |
 | 4 | 35–41 | done (push pending) | exit 0 — see Phase 4 results above |
-| 5 | 42–45 | not started | — |
+| 5 | 42–45 | done (push pending) | exit 0 — see Phase 5 results above |
 | 6 | 46–50 | not started | — |
 
 See `NOTES.md` for blockers and workarounds encountered along the way.
