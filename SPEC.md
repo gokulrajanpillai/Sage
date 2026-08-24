@@ -208,26 +208,54 @@ permitted whisper-model guard — build clean, 8/8 e2e).
 
 ## Phase 4 — Vault (notes)
 
+> **Note on location:** as with `SttProvider` in Phase 3, vault filesystem
+> logic (`frontmatter.ts`, `wikilinks.ts`, `noteExtraction.ts`, `vaultIndex.ts`,
+> `paths.ts`) lives under `src/main/vault/`, not `src/renderer/lib/vault/` —
+> reading/writing/watching files needs Node's `fs`, unavailable in the
+> sandboxed renderer. The renderer talks to it via `window.sage.vault.*`
+> (contextBridge + `ipcMain.handle`), and a `fs.watch` in the main process
+> pushes a `vault:changed` event to trigger a refresh.
+
 35. **Notes are Markdown with YAML frontmatter (`title`, `created`, `updated`, `tags`) that round-trips unchanged.**
     `npx vitest run tests/unit/notes.test.ts -t "frontmatter round-trips"`
+    Result: ✅ 1 passed — `parseNote(serializeNote(note))` deep-equals the original, and
+    serializing that parsed result again is byte-identical to the first serialization.
 
 36. **`[[wikilink]]` parsing reports unresolved links rather than dropping them.**
     `npx vitest run tests/unit/notes.test.ts -t "unresolved wikilinks are reported"`
+    Result: ✅ 1 passed — `resolveWikilinks` returns both `resolved` and `unresolved`
+    arrays; an unresolved target is never silently discarded.
 
 37. **Extracting notes from a conversation turn writes one file per note, with inferred tags, and never overwrites an existing file.**
     `npx vitest run tests/unit/noteExtraction.test.ts`
+    Result: ✅ 2 passed — one `.md` per `##` section, tags inferred from `#hashtags` in the
+    body (falling back to a slug of the title), and a pre-existing file is left untouched
+    (`created: false`) rather than overwritten.
 
 38. **The Vault view has a file tree, Markdown preview, tag filter, and backlinks panel.**
     `npx playwright test tests/e2e/vault.spec.ts -g "file tree, preview, tag filter and backlinks"`
+    Result: ✅ 1 passed — seeded a 2-note temp vault (one wikilinking the other), verified
+    the file tree lists both, the tag filter narrows the list, the Markdown preview renders
+    the selected note, and the backlinks panel shows the linking note.
 
 39. **The Vault view watches the vault directory and reflects external file changes.**
     `npx playwright test tests/e2e/vault.spec.ts -g "file watcher reflects external changes"`
+    Result: ✅ 1 passed — a `.md` file written to the vault directory from outside the app
+    (plain `fs.writeFileSync` in the test) appears in the file tree without restarting.
 
 40. **The default vault location is `~/SageVault`, overridable for tests.**
-    `grep -rq "SageVault" src/renderer/lib/vault && grep -rq "SAGE_VAULT_DIR" src/renderer/lib/vault`
+    `grep -rq "SageVault" src/main/vault && grep -rq "SAGE_VAULT_DIR" src/main/vault`
+    Result: ✅ `resolveVaultDir()` in `src/main/vault/paths.ts` returns
+    `process.env.SAGE_VAULT_DIR ?? join(homedir(), 'SageVault')`.
 
 41. **All vault tests operate on temp directories, never the real vault.**
-    `grep -rLq "SageVault" tests/unit/notes.test.ts tests/unit/noteExtraction.test.ts tests/e2e/vault.spec.ts`
+    `! grep -l "SageVault" tests/unit/notes.test.ts tests/unit/noteExtraction.test.ts tests/e2e/vault.spec.ts | grep .`
+    Result: ✅ none of the three files reference the literal `SageVault` folder; each uses
+    `mkdtempSync`/`SAGE_VAULT_DIR` to point at an isolated temp directory instead.
+
+**Phase 4 `npm run verify`: exit 0** (lint clean, lint:tokens clean over 24
+renderer files, typecheck clean, 10 passed / 1 skipped unit tests, build
+clean, 10/10 e2e).
 
 ---
 
@@ -278,7 +306,7 @@ permitted whisper-model guard — build clean, 8/8 e2e).
 | 1 | 12–20 | done (push pending) | exit 0 — see Phase 1 results above |
 | 2 | 21–27 | done (push pending) | exit 0 — see Phase 2 results above |
 | 3 | 28–34 | done (push pending) | exit 0 — see Phase 3 results above |
-| 4 | 35–41 | not started | — |
+| 4 | 35–41 | done (push pending) | exit 0 — see Phase 4 results above |
 | 5 | 42–45 | not started | — |
 | 6 | 46–50 | not started | — |
 

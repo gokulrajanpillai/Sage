@@ -1,15 +1,19 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { unlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createSttProvider } from './stt/createSttProvider'
+import { extractNotesFromTurn } from './vault/noteExtraction'
+import { resolveVaultDir } from './vault/paths'
+import { computeBacklinks, loadVault } from './vault/vaultIndex'
 
 if (process.env.SAGE_USER_DATA_DIR) {
   app.setPath('userData', process.env.SAGE_USER_DATA_DIR)
 }
 
 const sttProvider = createSttProvider()
+const vaultDir = resolveVaultDir()
 
 ipcMain.handle('stt:transcribe', async (_event, wavBytes: Uint8Array) => {
   const tempPath = join(tmpdir(), `sage-${randomUUID()}.wav`)
@@ -24,6 +28,13 @@ ipcMain.handle('stt:transcribe', async (_event, wavBytes: Uint8Array) => {
     }
   }
 })
+
+ipcMain.handle('vault:list', () => {
+  const notes = loadVault(vaultDir)
+  return { notes, backlinks: computeBacklinks(notes) }
+})
+
+ipcMain.handle('vault:extract', (_event, turnText: string) => extractNotesFromTurn(turnText, vaultDir))
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -48,6 +59,12 @@ function createWindow(): void {
 
 void app.whenReady().then(() => {
   createWindow()
+  mkdirSync(vaultDir, { recursive: true })
+  watch(vaultDir, { persistent: false }, () => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('vault:changed')
+    }
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

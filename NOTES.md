@@ -1,5 +1,12 @@
 # NOTES
 
+## 2026-08-24 — vault filesystem logic also lives in the main process
+
+Same reasoning as the STT note below: `src/main/vault/` (not
+`src/renderer/lib/vault/`), because reading/writing/watching `.md` files
+needs Node's `fs`. Renderer talks to it via `window.sage.vault.*`. SPEC.md's
+Phase 4 criteria 40-41 were corrected to the real paths/commands.
+
 ## 2026-08-24 — SttProvider lives in the main process, not the renderer
 
 SPEC.md's Phase 3 criteria originally assumed `src/renderer/lib/stt/...`
