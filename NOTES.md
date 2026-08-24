@@ -67,6 +67,16 @@ login` as `gokulrajanpillai`, an SSH key for that account, or
 access is granted, `git push -u origin main` from this same local history
 should succeed with no further work.
 
+**Resolved 2026-08-24:** rather than waiting on a `gh auth login` account
+switch, checked for an existing SSH identity on this machine first —
+`ssh -T git@github.com` responded `Hi gokulrajanpillai!`, meaning an SSH key
+already authenticated as the right account, entirely independent of the
+HTTPS credential manager (which stays pinned to `gokulrajan-sdc`). Switched
+`origin` to `git@github.com:gokulrajanpillai/Sage.git` and `git push -u
+origin main` succeeded immediately. `git rev-parse HEAD origin/main` now
+returns matching hashes (`ec51ec7...`). All 50 SPEC.md criteria, including
+50 itself, are now met.
+
 **Confirmed 2026-08-24, end of Phase 0:** `git push -u origin main` failed —
 `remote: Permission to gokulrajanpillai/Sage.git denied to gokulrajan-sdc` /
 `403`. Local commit `ab85b50` ("feat: scaffold Sage Electron/React/TS app and
