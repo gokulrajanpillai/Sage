@@ -9,6 +9,8 @@ interface ConsoleState {
   messages: ChatMessage[]
   isStreaming: boolean
   error: string | null
+  tokensPerSecond: number | null
+  timeToFirstTokenMs: number | null
   loadModels: () => Promise<void>
   selectModel: (model: string) => void
   sendMessage: (content: string) => void
@@ -26,6 +28,8 @@ export const useConsoleStore = create<ConsoleState>()(
       messages: [],
       isStreaming: false,
       error: null,
+      tokensPerSecond: null,
+      timeToFirstTokenMs: null,
 
       loadModels: async () => {
         try {
@@ -55,10 +59,19 @@ export const useConsoleStore = create<ConsoleState>()(
         const { selectedModel, messages } = get()
         const history = messages.slice(0, -1)
 
+        const startedAt = performance.now()
+        let firstTokenAt: number | null = null
+        let tokenCount = 0
+
         activeStream = provider.streamChat(
           history,
           selectedModel,
           (token) => {
+            tokenCount += 1
+            if (firstTokenAt === null) {
+              firstTokenAt = performance.now()
+              set({ timeToFirstTokenMs: Math.round(firstTokenAt - startedAt) })
+            }
             set((state) => {
               const next = [...state.messages]
               const last = next[next.length - 1]
@@ -67,7 +80,12 @@ export const useConsoleStore = create<ConsoleState>()(
             })
           },
           () => {
-            set({ isStreaming: false })
+            const elapsedSeconds = (performance.now() - (firstTokenAt ?? startedAt)) / 1000
+            set({
+              isStreaming: false,
+              tokensPerSecond:
+                elapsedSeconds > 0 ? Math.round((tokenCount / elapsedSeconds) * 10) / 10 : tokenCount
+            })
             activeStream = null
           },
           (error) => {

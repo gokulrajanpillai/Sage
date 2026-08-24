@@ -305,9 +305,17 @@ clean, 15/15 e2e).
 
 46. **The Console telemetry strip shows tokens/sec, time-to-first-token, transcription latency, note count, and the selected model.**
     `npx playwright test tests/e2e/telemetry.spec.ts`
+    Result: ✅ 1 passed — all five read `—` before any activity, then each fills in after
+    a chat turn (tok/s, TTFT) and a push-to-talk turn (STT latency); note count and model
+    are live from mount.
 
 47. **README documents prerequisites, Ollama setup, whisper model download, and a clean-clone quickstart.**
     `grep -qi "prerequisites" README.md && grep -qi "ollama" README.md && grep -qi "whisper" README.md && grep -qi "quickstart" README.md`
+    Result: ✅ all four matched.
+
+**Phase 6 `npm run verify`: exit 0** (lint clean, lint:tokens clean over 26
+renderer files, typecheck clean, 12 passed / 1 skipped unit tests, build
+clean, 16/16 e2e).
 
 ---
 
@@ -315,12 +323,22 @@ clean, 15/15 e2e).
 
 48. **No skipped tests except the whisper-model guard (criterion 34).**
     `npx vitest run 2>&1 | grep -i skip; npx playwright test 2>&1 | grep -i skip`
+    Result: ✅ only `tests/unit/whisperCpp.test.ts`'s guarded real-binary test is skipped
+    (1 skipped, out of 13 unit tests); all 16 e2e tests run and pass, none skipped.
 
 49. **No outstanding TODO/FIXME markers in source.**
     `grep -rn "TODO\|FIXME" src/`  → no output
+    Result: ✅ confirmed empty after every phase, including this one.
 
 50. **Local `main` equals `origin/main`.**
     `git rev-parse HEAD origin/main`  → both hashes identical
+    Result: ❌ **not met.** Every phase's commit exists locally on `main` (7 commits,
+    HEAD at the Phase 6 commit below), but `git push` has failed after every phase with
+    `remote: Permission to gokulrajanpillai/Sage.git denied to gokulrajan-sdc` (403). This
+    is the one outstanding item — see NOTES.md. `origin/main` currently doesn't exist at
+    all (the remote repo is still empty); once push access is granted to `gokulrajanpillai`
+    (or `gokulrajan-sdc` is added as a collaborator), the existing local history pushes
+    as-is and this criterion is satisfied with no further code changes.
 
 ---
 
@@ -334,6 +352,6 @@ clean, 15/15 e2e).
 | 3 | 28–34 | done (push pending) | exit 0 — see Phase 3 results above |
 | 4 | 35–41 | done (push pending) | exit 0 — see Phase 4 results above |
 | 5 | 42–45 | done (push pending) | exit 0 — see Phase 5 results above |
-| 6 | 46–50 | not started | — |
+| 6 | 46–50 | done except push (criterion 50 blocked on repo access) | exit 0 — see Phase 6 results above |
 
 See `NOTES.md` for blockers and workarounds encountered along the way.

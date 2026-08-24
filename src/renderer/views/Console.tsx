@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PushToTalk } from '../components/PushToTalk'
+import { TelemetryStrip } from '../components/TelemetryStrip'
 import { useConsoleStore } from '../store/consoleStore'
 import { borders, colors } from '../theme/tokens'
 
@@ -116,6 +117,8 @@ export function Console() {
           </button>
         )}
       </div>
+
+      <TelemetryStrip />
     </div>
   )
 }

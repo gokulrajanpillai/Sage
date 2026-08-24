@@ -41,6 +41,16 @@ Workaround: continue committing locally after every phase as instructed. Attempt
 
 Follow-up: once push succeeds, confirm `git rev-parse HEAD origin/main` match for every phase's commit, not just the latest.
 
+**Status at end of Phase 6 (all 7 phases complete locally):** all 7 phase
+commits exist on local `main`; `npm run verify` exits 0 with all criteria in
+SPEC.md passing except criterion 50 (`HEAD` == `origin/main`), which remains
+blocked on the `gokulrajan-sdc` / `gokulrajanpillai` account permission
+issue above. No code change can satisfy this — it needs either a `gh auth
+login` as `gokulrajanpillai`, an SSH key for that account, or
+`gokulrajan-sdc` added as a collaborator on the repo. The instant push
+access is granted, `git push -u origin main` from this same local history
+should succeed with no further work.
+
 **Confirmed 2026-08-24, end of Phase 0:** `git push -u origin main` failed —
 `remote: Permission to gokulrajanpillai/Sage.git denied to gokulrajan-sdc` /
 `403`. Local commit `ab85b50` ("feat: scaffold Sage Electron/React/TS app and
