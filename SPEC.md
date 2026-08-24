@@ -16,38 +16,54 @@ Ollama install, or microphone is required.
 
 1. **SPEC.md exists and is tracked.**
    `test -f SPEC.md && git ls-files SPEC.md`
+   Result: ✅ tracked as of commit `ab85b50`.
 
 2. **Electron 33 is a project dependency.**
    `node -p "require('./package.json').devDependencies.electron"` → matches `^33`
+   Result: ✅ `^33.0.2` (installed 33.4.11).
 
 3. **React 18 is a project dependency.**
    `node -p "require('./package.json').dependencies.react"` → matches `^18`
+   Result: ✅ `^18.3.1`.
 
 4. **TypeScript strict mode is enabled** in both project configs.
    `grep -l '"strict": true' tsconfig.node.json tsconfig.web.json`
+   Result: ✅ both files matched.
 
 5. **Vite (via electron-vite) is the build tool.**
    `node -p "require('./package.json').devDependencies.vite"` and
    `node -p "require('./package.json').devDependencies['electron-vite']"`
+   Result: ✅ `^5.4.8` / `^2.3.0`.
 
 6. **Tailwind is wired for the renderer.**
    `test -f tailwind.config.js && grep -q tailwindcss postcss.config.js`
+   Result: ✅ both present; renderer imports `@tailwind base/components/utilities`.
 
 7. **Zustand is a project dependency.**
    `node -p "require('./package.json').dependencies.zustand"`
+   Result: ✅ `^4.5.5`.
 
 8. **Vitest runs unit tests.**
    `npx vitest run --reporter=basic`
+   Result: ✅ `tests/unit/lintTokens.test.ts (4 tests) — 1 passed (1), 4 passed (4)`.
 
 9. **Playwright drives Electron via the `_electron` fixture.**
    `grep -rl "_electron" tests/e2e`
+   Result: ✅ `tests/e2e/fixtures.ts`.
 
 10. **`npm run verify` exists and is the full gate.**
     `node -p "require('./package.json').scripts.verify"` →
     `lint && lint:tokens && typecheck && test && build && e2e`
+    Result: ✅ matches exactly.
 
 11. **The app builds and boots to a window titled "Sage".**
     `npm run build && npx playwright test tests/e2e/app.spec.ts`
+    Result: ✅ build emits `out/main`, `out/preload`, `out/renderer`;
+    `tests/e2e/app.spec.ts › launches and shows the Sage window` — 1 passed.
+
+**Phase 0 `npm run verify`: exit 0** (lint clean, lint:tokens clean, typecheck
+clean, 4/4 unit tests, build clean, 1/1 e2e). Committed as `ab85b50`; push to
+`origin/main` blocked — see NOTES.md.
 
 ---
 
@@ -200,7 +216,7 @@ Ollama install, or microphone is required.
 
 | Phase | Criteria | Status | Last `npm run verify` result |
 |-------|----------|--------|-------------------------------|
-| 0 | 1–11 | in progress | pending |
+| 0 | 1–11 | done (push pending) | exit 0 — see Phase 0 results above |
 | 1 | 12–20 | not started | — |
 | 2 | 21–27 | not started | — |
 | 3 | 28–34 | not started | — |
