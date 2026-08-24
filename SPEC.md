@@ -71,30 +71,43 @@ clean, 4/4 unit tests, build clean, 1/1 e2e). Committed as `ab85b50`; push to
 
 12. **`tokens.ts` defines the near-black background `#04070d`.**
     `grep -q "#04070d" src/renderer/theme/tokens.ts`
+    Result: ✅ `colors.bg = '#04070d'`.
 
 13. **`tokens.ts` defines a cyan accent and an amber accent.**
     `grep -q accentCyan src/renderer/theme/tokens.ts && grep -q accentAmber src/renderer/theme/tokens.ts`
+    Result: ✅ `colors.accentCyan = '#28e0ff'`, `colors.accentAmber = '#ffb454'`.
 
 14. **`tokens.ts` defines a monospace numeral font stack.**
     `grep -q "fonts.numeric\|numeric:" src/renderer/theme/tokens.ts`
+    Result: ✅ `fonts.numeric`, applied to the rail's version tag in `App.tsx`.
 
 15. **Concentric-arc and scanline visual tokens/components exist and are original (no third-party or trademarked art).**
     `test -f src/renderer/components/ConcentricArcs.tsx && test -f src/renderer/components/Scanlines.tsx && ! find src/renderer -iname "*.png" -o -iname "*.jpg" -o -iname "*.ttf" | grep .`
+    Result: ✅ both components exist (hand-authored inline SVG / CSS gradient); no binary or font assets under `src/renderer`.
 
 16. **The app shell has a left rail that switches Console / Vault / Cosmos.**
     `npx playwright test tests/e2e/appShell.spec.ts -g "left rail"`
+    Result: ✅ 1 passed.
 
 17. **The active view persists across a full app restart.**
     `npx playwright test tests/e2e/persistence.spec.ts -g "persists across restart"`
+    Result: ✅ 1 passed (launches Electron twice against the same temp `userData` dir via `SAGE_USER_DATA_DIR`).
 
 18. **`lint:tokens` fails on a raw hex literal in a component.**
     `npx vitest run tests/unit/lintTokens.test.ts -t "flags a raw hex"`
+    Result: ✅ passed.
 
 19. **`lint:tokens` fails on a raw px literal in a component.**
     `npx vitest run tests/unit/lintTokens.test.ts -t "flags a raw px"`
+    Result: ✅ passed. (Caught for real during development: `App.tsx`'s `1px solid` border literal was rejected and moved into `tokens.borders.hairlineWidth`.)
 
 20. **`lint:tokens` passes against the actual current source tree.**
     `npm run lint:tokens`
+    Result: ✅ "lint:tokens passed — scanned 10 file(s) under src/renderer, no raw hex/px literals outside theme/tokens.ts".
+
+**Phase 1 `npm run verify`: exit 0** (lint clean, lint:tokens clean over 10
+renderer files, typecheck clean, 4/4 unit tests, build clean, 3/3 e2e —
+smoke, left-rail switching, restart persistence).
 
 ---
 
@@ -217,7 +230,7 @@ clean, 4/4 unit tests, build clean, 1/1 e2e). Committed as `ab85b50`; push to
 | Phase | Criteria | Status | Last `npm run verify` result |
 |-------|----------|--------|-------------------------------|
 | 0 | 1–11 | done (push pending) | exit 0 — see Phase 0 results above |
-| 1 | 12–20 | not started | — |
+| 1 | 12–20 | done (push pending) | exit 0 — see Phase 1 results above |
 | 2 | 21–27 | not started | — |
 | 3 | 28–34 | not started | — |
 | 4 | 35–41 | not started | — |
